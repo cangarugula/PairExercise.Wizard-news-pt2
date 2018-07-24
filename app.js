@@ -11,7 +11,10 @@ app.use(express.static(__dirname + "/public"));
 
 app.get("/", async (req, res) => {
   try {
-    // const posts = postBank.list();
+    if(req.query.delete) {
+      await client.query(`delete from posts
+      where id = ${req.query.delete}`)
+    }
     const data = await client.query(
       `select *
       from (select * from posts as posts) as posts
@@ -20,6 +23,7 @@ app.get("/", async (req, res) => {
       join (select postid, count(*) as upvotes from upvotes group by postid) as counting
       on users.id = counting.postid;`)
     res.send(postList(data.rows));
+
   } catch(error) {
     console.log(error);
     res.status(500).send(error)
@@ -41,6 +45,20 @@ app.get("/posts/:id", async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+app.get('/delete/:id', async (req,res)=> {
+  try {
+    const data = await client.query(
+    `delete from counting
+    where counting.id = ${req.params.id}`
+    )
+    res.send(postList(data.rows))
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error)
+  }
+
+})
 
 const PORT = 1337;
 
